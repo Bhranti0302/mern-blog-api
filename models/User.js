@@ -1,70 +1,80 @@
-const mongoose=require('mongoose');
-const bcrypt=require("bcryptjs");
+const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
+const crypto = require("crypto");
 
-const userSchema=new mongoose.Schema({
-    user:{
-        type:String,
-        required:[true,"Please provide a username"],
-        minlength:2,
-        maxlength:50,
-    },
-    
-    email:{
-        type:String,
-        required:[true,"Please provide an email"],
-        unique:true,
-        trim:true,
-        lowercase:true,
-        match:[/.+@.+\..+/, "Please provide a valid email address"],
+const userSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: [true, "Please provide a username"],
+      minlength: 2,
+      maxlength: 50,
     },
 
-    password:{
-        type:String,
-        required:[true,"Please provide a password"],
-        minlength:6,
-        maxlength:100,
-    }, 
-
-    status:{
-        type:String,
-        enum:["active","inactive","pending"],
-        default:"pending"
+    email: {
+      type: String,
+      required: [true, "Please provide an email"],
+      unique: true,
+      trim: true,
+      lowercase: true,
+      match: [/.+@.+\..+/, "Please provide a valid email address"],
     },
 
-    role:{
-        type:String,
-        enum:["user","admin"],
-        default:"user"
+    password: {
+      type: String,
+      required: [true, "Please provide a password"],
+      minlength: 6,
+      maxlength: 100,
+      select: false,
     },
 
-    passwordResetToken:String,
-    passwordResetExpires:Date,
+    status: {
+      type: String,
+      enum: ["active", "inactive", "pending"],
+      default: "pending",
+    },
 
-    passwordChangedAt:Date,
-},{
-    timestamps:true
-})
+    role: {
+      type: String,
+      enum: ["user", "admin"],
+      default: "user",
+    },
 
-userSchema.pre("save",async function(next){
-    if(this.isModified("password")) return next();
+    passwordResetToken: String,
+    passwordResetExpires: Date,
+    passwordChangedAt: Date,
+  },
+  {
+    timestamps: true,
+  },
+);
 
-    const salt=await bcrypt.genSalt(10);
+// 🔐 HASH PASSWORD
+userSchema.pre("save", async function () {
+  if (!this.isModified("password")) return;
 
-    this.password=await bcrypt.hash(this.password,salt);
-    this.passwordChangedAt=Date.now()-1000;
-    next();
-})
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(this.password, salt);
+  this.passwordChangedAt = Date.now() - 1000;
+});
 
-userSchema.methods.comparedPassword=async(async function(enteredPassword){
-    return await bcrypt.compare(enteredPassword,this.password);
-})
+// 🔑 COMPARE PASSWORD
+userSchema.methods.comparePassword = async function (enteredPassword) {
+  return await bcrypt.compare(enteredPassword, this.password);
+};
 
-userSchema.methods.createPasswordResetToken=function(){
-    const resetToken=Math.randomBytes(32).toString("hex");
+// 🔐 RESET TOKEN
+userSchema.methods.createPasswordResetToken = function () {
+  const resetToken = crypto.randomBytes(32).toString("hex");
 
-    this.passwordResetToken=crypto.createHash("sha256").update(resetToken).digest("hex");
-    this.passwordResetTokenExpires=Date.now()+10*60*1000;
-    return resetToken;
-}
+  this.passwordResetToken = crypto
+    .createHash("sha256")
+    .update(resetToken)
+    .digest("hex");
 
-module.exports=mongoose.model("User",userSchema);
+  this.passwordResetExpires = Date.now() + 10 * 60 * 1000;
+
+  return resetToken;
+};
+
+module.exports = mongoose.model("User", userSchema);
