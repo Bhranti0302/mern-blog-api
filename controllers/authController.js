@@ -1,6 +1,6 @@
 const User = require("../models/User");
 const generateToken = require("../utils/generateToken");
-const cookieOptions = require("../utils/cookieOptions");
+const cookieOptions = require("../utils/cookieOption");
 const jwt = require("jsonwebtoken");
 
 // ================= REGISTER =================
