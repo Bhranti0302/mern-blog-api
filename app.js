@@ -4,7 +4,8 @@ const cookieParser = require("cookie-parser");
 
 const errorMiddleware = require("./middlewares/errorMiddleware")
 
-const authRoutes = require("./routes/authRoutes")
+const authRoutes = require("./routes/authRoutes");
+const userRoutes = require("./routes/userRoutes")
 
 const app = express();
 
@@ -23,6 +24,7 @@ app.get("/", (req, res) => {
 
 // Routes
 app.use("/api/auth", authRoutes)
+app.use("/api/user",userRoutes)
 
 // Handle unknown routes
 app.use((req, res, next) => {
