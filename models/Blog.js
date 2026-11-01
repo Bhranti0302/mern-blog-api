@@ -54,6 +54,14 @@ const blogSchema = new mongoose.Schema(
       default: null,
     },
 
+    // Users who liked this blog
+    likes: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
+
     likesCount: {
       type: Number,
       default: 0,
