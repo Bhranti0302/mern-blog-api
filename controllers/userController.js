@@ -129,6 +129,9 @@ const deleteUser = asyncHandler(async (req, res) => {
         })
     }
 
+    // Delete all blogs created by this user
+    await Blog.deleteMany({ author: req.params.id });
+
     res.status(200).json({
         success: true,
         message:"Profile deleted successfully"
