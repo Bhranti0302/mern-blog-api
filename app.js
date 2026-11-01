@@ -5,7 +5,8 @@ const cookieParser = require("cookie-parser");
 const errorMiddleware = require("./middlewares/errorMiddleware")
 
 const authRoutes = require("./routes/authRoutes");
-const userRoutes = require("./routes/userRoutes")
+const userRoutes = require("./routes/userRoutes");
+const blogRoutes = require("./routes/blogRoutes");
 
 const app = express();
 
@@ -23,8 +24,9 @@ app.get("/", (req, res) => {
 });
 
 // Routes
-app.use("/api/auth", authRoutes)
-app.use("/api/user",userRoutes)
+app.use("/api/auth", authRoutes);
+app.use("/api/user", userRoutes);
+app.use("/api/blog", blogRoutes);
 
 // Handle unknown routes
 app.use((req, res, next) => {
