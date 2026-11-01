@@ -9,6 +9,7 @@ const {
     deleteBlogByAdmin,
     toggleBlogLike,
 } = require("../controllers/blogController");
+const { createComment } = require("../controllers/commentController");
 const { protect } = require("../middlewares/authMiddleware");
 const { restrictTo } = require("../middlewares/roleMiddleware");
 
@@ -26,5 +27,8 @@ router.get("/", protect, getAllBlogs);
 
 // -------------------- For Admin ---------------------
 router.delete("/admin/:id", protect, restrictTo("admin"), deleteBlogByAdmin);
+
+// ------------------ Comment --------------------
+router.post("/:id/comments", protect, createComment);
 
 module.exports = router;
