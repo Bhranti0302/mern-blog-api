@@ -217,7 +217,7 @@ const getAllBlogs = asyncHandler(async (req, res) => {
   });
 });
 
-// -------------------- For All Users ---------------------
+// ----------------- For All Users -------------------
 const deleteBlogByAdmin = asyncHandler(async (req, res) => {
   const blog = await Blog.findByIdAndDelete(req.params.id);
 
