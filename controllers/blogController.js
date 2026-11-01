@@ -1,6 +1,7 @@
 const asyncHandler = require("../utils/asyncHandler");
 const User = require("../models/User");
 const Blog = require("../models/Blog");
+const mongoose = require("mongoose");
 
 // ------------------ For logged in users only ------------------
 
@@ -107,14 +108,14 @@ const deleteBlog = asyncHandler(async (req, res) => {
     return res.status(404).json({
       success: false,
       message: "Blog not found or you are not authorized to delete this blog",
-    })
+    });
   }
 
   res.status(200).json({
     success: true,
     message: "Blog deleted successfully",
-  })
-})
+  });
+});
 
 const getMyBlogs = asyncHandler(async (req, res) => {
   const blogs = await Blog.find({
@@ -125,55 +126,93 @@ const getMyBlogs = asyncHandler(async (req, res) => {
     success: true,
     message: "Blogs fetched successfully",
     totalBlogs: blogs.length,
-    blogs
-  })
-})
+    blogs,
+  });
+});
 
 // -------------------- For All Users ---------------------
 
 const getAllBlogs = asyncHandler(async (req, res) => {
+  // 1. Pagination
   const page = Math.max(1, parseInt(req.query.page, 10) || 1);
 
   const limit = Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || 10));
 
   const skip = (page - 1) * limit;
 
-  const { search, category } = req.query;
+  // 2. Get query parameters
+  const { search, category, tag, sort } = req.query;
 
-  // Build filter object
+  // 3. Build filter object
   const filter = {};
 
-  // Search by title and content
+  // 4. Search by title and content
   if (search && search.trim()) {
     const searchText = search.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
     filter.$or = [
-      { title: { $regex: searchText, $options: "i" } },
-      { content: { $regex: searchText, $options: "i" } },
+      {
+        title: {
+          $regex: searchText,
+          $options: "i",
+        },
+      },
+      {
+        content: {
+          $regex: searchText,
+          $options: "i",
+        },
+      },
     ];
   }
 
-  // Filter by category
-  if (category) {
-    filter.category = category;
+  // 5. Filter by category
+  if (category && category.trim()) {
+    filter.category = category.trim().toLowerCase();
   }
 
-  // Count matching blogs
+  // 6. Filter by tag
+  if (tag && tag.trim()) {
+    filter.tags = tag.trim().toLowerCase();
+  }
+
+  // 7. Dynamic sorting
+  const sortOptions = {
+    newest: { createdAt: -1 },
+    oldest: { createdAt: 1 },
+    mostLiked: { likesCount: -1, createdAt: -1 },
+    leastLiked: { likesCount: 1, createdAt: -1 },
+  };
+
+  const sortBy = sortOptions[sort] || sortOptions.newest;
+
+  // 8. Count matching blogs
   const totalBlogs = await Blog.countDocuments(filter);
 
-  // Fetch blogs
+  // 9. Fetch blogs
   const blogs = await Blog.find(filter)
-    .sort({ createdAt: -1 })
+    .sort(sortBy)
     .skip(skip)
     .limit(limit)
     .populate("author", "name email");
 
+  // 10. Pagination information
+  const totalPages = Math.ceil(totalBlogs / limit);
+
+  // 11. Send response
   res.status(200).json({
     success: true,
     message: "Blogs fetched successfully",
+    results: blogs.length,
+
     currentPage: page,
-    totalPages: Math.ceil(totalBlogs / limit),
+    totalPages,
     totalBlogs,
+    limit,
+
+    hasNextPage: page < totalPages,
+    hasPrevPage: page > 1,
+
     blogs,
   });
 });
@@ -192,8 +231,78 @@ const deleteBlogByAdmin = asyncHandler(async (req, res) => {
   res.status(200).json({
     success: true,
     message: "Blog deleted successfully",
-  })
-})
+  });
+});
 
+const toggleBlogLike = asyncHandler(async (req, res) => {
+  const { id } = req.params;
 
-module.exports = { createBlog, updateBlog, deleteBlog, getAllBlogs, getMyBlogs, deleteBlogByAdmin };
+  // Validate Blog ID
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid blog ID",
+    });
+  }
+
+  const userId = req.user._id;
+
+  // Find Blog
+  const blog = await Blog.findById(id);
+
+  if (!blog) {
+    return res.status(404).json({
+      success: false,
+      message: "Blog not found",
+    });
+  }
+
+  // Check whether user already liked the blog
+  const isLiked = blog.likes.some(
+    (likeId) => likeId.toString() === userId.toString(),
+  );
+
+  let updatedBlog;
+
+  if (isLiked) {
+    // Unlike Blog
+    updatedBlog = await Blog.findOneAndUpdate(
+      { _id: id, likes: userId },
+      {
+        $pull: { likes: userId },
+      },
+      { new: true },
+    );
+  } else {
+    // Like Blog
+    updatedBlog = await Blog.findOneAndUpdate(
+      { _id: id, likes: { $ne: userId } },
+      {
+        $addToSet: { likes: userId },
+      },
+      { new: true },
+    );
+  }
+
+  // Calculate likes count from likes array
+  updatedBlog.likesCount = updatedBlog.likes.length;
+
+  await updatedBlog.save();
+
+  return res.status(200).json({
+    success: true,
+    message: isLiked ? "Blog unliked successfully" : "Blog liked successfully",
+    likesCount: updatedBlog.likesCount,
+    isLiked: !isLiked,
+  });
+});
+
+module.exports = {
+  createBlog,
+  updateBlog,
+  deleteBlog,
+  getAllBlogs,
+  getMyBlogs,
+  deleteBlogByAdmin,
+  toggleBlogLike,
+};
