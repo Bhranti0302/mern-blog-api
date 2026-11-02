@@ -1,6 +1,7 @@
 const asyncHandler = require("../utils/asyncHandler");
 const User = require("../models/User");
 const Blog = require("../models/Blog");
+const Comment = require("../models/Comment");
 const mongoose = require("mongoose");
 
 // ------------------ For logged in users only ------------------
@@ -26,7 +27,7 @@ const createBlog = asyncHandler(async (req, res) => {
     author: user._id,
   });
 
-  res.status(200).json({
+  res.status(201).json({
     success: true,
     message: "Blog created successfully",
     blog: {
@@ -56,14 +57,14 @@ const updateBlog = asyncHandler(async (req, res) => {
     });
   }
 
-  let updateData = {};
+  const updateData = {};
 
   if (title !== undefined) updateData.title = title;
   if (content !== undefined) updateData.content = content;
   if (category !== undefined) updateData.category = category;
   if (tags !== undefined) updateData.tags = tags;
 
-  const blog = await Blog.findByIdAndUpdate(
+  const blog = await Blog.findOneAndUpdate(
     {
       _id: req.params.id,
       author: req.user._id,
@@ -111,12 +112,16 @@ const deleteBlog = asyncHandler(async (req, res) => {
     });
   }
 
+  // Delete associated comments
+  await Comment.deleteMany({ blog: blog._id });
+
   res.status(200).json({
     success: true,
     message: "Blog deleted successfully",
   });
 });
 
+// Get My Blogs
 const getMyBlogs = asyncHandler(async (req, res) => {
   const blogs = await Blog.find({
     author: req.user._id,
@@ -132,6 +137,7 @@ const getMyBlogs = asyncHandler(async (req, res) => {
 
 // -------------------- For All Users ---------------------
 
+// Get All Blogs
 const getAllBlogs = asyncHandler(async (req, res) => {
   // 1. Pagination
   const page = Math.max(1, parseInt(req.query.page, 10) || 1);
@@ -217,9 +223,28 @@ const getAllBlogs = asyncHandler(async (req, res) => {
   });
 });
 
-// ----------------- For All Users -------------------
-const deleteBlogByAdmin = asyncHandler(async (req, res) => {
-  const blog = await Blog.findByIdAndDelete(req.params.id);
+// -------------------- Get Single Blog --------------------
+
+// Get Blog By ID with comments and commenter details
+const getBlogById = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid blog ID",
+    });
+  }
+
+  const blog = await Blog.findById(id)
+    .populate("author", "name email")
+    .populate({
+      path: "comments",
+      populate: {
+        path: "user",
+        select: "name",
+      },
+    });
 
   if (!blog) {
     return res.status(404).json({
@@ -230,9 +255,33 @@ const deleteBlogByAdmin = asyncHandler(async (req, res) => {
 
   res.status(200).json({
     success: true,
+    message: "Blog fetched successfully",
+    blog,
+  });
+});
+
+// ----------------- For Admin -------------------
+
+const deleteBlogByAdmin = asyncHandler(async (req, res) => {
+  const blog = await Blog.findByIdAndDelete(req.params.id);
+
+  if (!blog) {
+    return res.status(404).json({
+      success: false,
+      message: "Blog not found",
+    });
+  }
+
+  // Delete associated comments
+  await Comment.deleteMany({ blog: blog._id });
+
+  res.status(200).json({
+    success: true,
     message: "Blog deleted successfully",
   });
 });
+
+// -------------------- Toggle Blog Like --------------------
 
 const toggleBlogLike = asyncHandler(async (req, res) => {
   const { id } = req.params;
@@ -289,7 +338,7 @@ const toggleBlogLike = asyncHandler(async (req, res) => {
 
   await updatedBlog.save();
 
-  return res.status(200).json({
+  res.status(200).json({
     success: true,
     message: isLiked ? "Blog unliked successfully" : "Blog liked successfully",
     likesCount: updatedBlog.likesCount,
@@ -303,6 +352,7 @@ module.exports = {
   deleteBlog,
   getAllBlogs,
   getMyBlogs,
+  getBlogById,
   deleteBlogByAdmin,
   toggleBlogLike,
 };
