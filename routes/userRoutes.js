@@ -10,6 +10,8 @@ const {
   updateUser,
   deleteUser,
 } = require("../controllers/userController");
+const upload = require("../middlewares/uploadMiddleware");
+const { uploadProfilePicture } = require("../controllers/userController");
 
 const router = express.Router();
 
@@ -22,5 +24,13 @@ router.delete("/me", protect, deleteMe);
 router.get("/", protect, restrictTo("admin"), getAllUsers);
 router.put("/:id", protect, restrictTo("admin"), updateUser);
 router.delete("/:id", protect, restrictTo("admin"), deleteUser);
+
+// Image
+router.patch(
+  "/profile-picture",
+  protect,
+  upload.single("profilePicture"),
+  uploadProfilePicture,
+);
 
 module.exports = router;
