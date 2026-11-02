@@ -22,8 +22,8 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: [true, "Password is required"],
       trim: true,
-        minlength: 6,
-      select:false,
+      minlength: 6,
+      select: false,
       match: [
         /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$/,
         "Password must contain uppercase, lowercase, number, and special character, and be at least 6 characters long",
@@ -34,6 +34,16 @@ const userSchema = new mongoose.Schema(
       type: String,
       enum: ["user", "admin"],
       default: "user",
+    },
+
+    profilePicture: {
+      type: String,
+      default: "",
+    },
+
+    profilePicturePublicId: {
+      type: String,
+      default: "",
     },
   },
   {
