@@ -1,7 +1,6 @@
 const Comment = require("../models/Comment");
 const Blog = require("../models/Blog");
 const asyncHandler = require("../utils/asyncHandler");
-const { createBlog } = require("./blogController");
 
 // Create comment
 const createComment = asyncHandler(async (req, res) => {
@@ -18,8 +17,16 @@ const createComment = asyncHandler(async (req, res) => {
     });
   }
 
+  // Validate comment content
+  if (!content || !content.trim()) {
+    return res.status(400).json({
+      success: false,
+      message: "Comment content is required",
+    });
+  }
+
   // Create comment
-  const comment = await comment.create({
+  const comment = await Comment.create({
     blog: id,
     user: req.user._id,
     content,
@@ -40,4 +47,4 @@ const createComment = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = {createBlog}
+module.exports = { createComment };
