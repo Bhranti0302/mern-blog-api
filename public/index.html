@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <meta
+    name="description"
+    content="MERN Blog API - A RESTful backend with authentication, blog management, comments, Cloudinary uploads, and AI-powered summarization."
+  />
+
+  <title>MERN Blog API | Backend Documentation</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <style>
+    :root {
+      --bg: #080b14;
+      --surface: #101626;
+      --surface-light: #151e31;
+      --text: #f5f7ff;
+      --muted: #9aa6bd;
+      --primary: #8b7cff;
+      --secondary: #38d9c5;
+      --border: rgba(255,255,255,0.09);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: "DM Sans", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .container {
+      width: min(1120px, 90%);
+      margin: auto;
+    }
+
+    /* Background effects */
+
+    .background-glow {
+      position: fixed;
+      width: 450px;
+      height: 450px;
+      border-radius: 50%;
+      filter: blur(120px);
+      opacity: 0.15;
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    .glow-one {
+      background: #745cff;
+      top: -180px;
+      left: -120px;
+    }
+
+    .glow-two {
+      background: #00cbb2;
+      right: -150px;
+      top: 450px;
+    }
+
+    /* Navbar */
+
+    nav {
+      height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 21px;
+      font-weight: 700;
+      letter-spacing: -1px;
+    }
+
+    .logo span {
+      color: var(--primary);
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 28px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .nav-links a:hover {
+      color: white;
+    }
+
+    .nav-button {
+      padding: 11px 18px;
+      border-radius: 9px;
+      background: var(--primary);
+      color: white;
+      font-weight: 600;
+      transition: 0.3s;
+    }
+
+    .nav-button:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 25px rgba(139,124,255,0.3);
+    }
+
+    /* Hero */
+
+    .hero {
+      min-height: 620px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 100px 0 90px;
+    }
+
+    .hero-content {
+      max-width: 850px;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      padding: 9px 15px;
+      border: 1px solid var(--border);
+      border-radius: 30px;
+      color: #b9c5d9;
+      font-size: 13px;
+      margin-bottom: 28px;
+      background: rgba(255,255,255,0.03);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      background: #39d98a;
+      border-radius: 50%;
+      box-shadow: 0 0 12px #39d98a;
+      animation: pulse 1.5s infinite;
+    }
+
+    .hero h1 {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: clamp(42px, 7vw, 76px);
+      line-height: 1.08;
+      letter-spacing: -3px;
+      margin-bottom: 25px;
+    }
+
+    .gradient-text {
+      background: linear-gradient(100deg, #9d8cff, #45ddce);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .hero p {
+      max-width: 680px;
+      margin: 0 auto;
+      color: var(--muted);
+      font-size: 17px;
+      line-height: 1.8;
+    }
+
+    .hero-buttons {
+      margin-top: 35px;
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 15px 23px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 14px;
+      transition: 0.3s;
+    }
+
+    .button-primary {
+      background: linear-gradient(110deg, #8170ff, #6352e8);
+      box-shadow: 0 8px 25px rgba(117,96,255,0.22);
+    }
+
+    .button-secondary {
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.03);
+    }
+
+    .button:hover {
+      transform: translateY(-4px);
+    }
+
+    .hero-note {
+      margin-top: 22px;
+      font-size: 12px;
+      color: #76839a;
+    }
+
+    /* Section common */
+
+    section {
+      padding: 85px 0;
+    }
+
+    .section-heading {
+      text-align: center;
+      margin-bottom: 45px;
+    }
+
+    .section-heading span {
+      color: var(--secondary);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .section-heading h2 {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: clamp(28px, 4vw, 40px);
+      margin: 13px 0;
+    }
+
+    .section-heading p {
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    /* Stats */
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 15px;
+      margin-top: -20px;
+    }
+
+    .stat-card {
+      text-align: center;
+      padding: 25px 15px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: var(--surface);
+    }
+
+    .stat-card h3 {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 27px;
+      color: var(--secondary);
+    }
+
+    .stat-card p {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 7px;
+    }
+
+    /* Features */
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+    }
+
+    .feature-card {
+      padding: 27px;
+      border: 1px solid var(--border);
+      border-radius: 15px;
+      background: linear-gradient(
+        145deg,
+        rgba(255,255,255,0.045),
+        rgba(255,255,255,0.015)
+      );
+      transition: 0.3s;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-7px);
+      border-color: rgba(139,124,255,0.55);
+      background: var(--surface-light);
+    }
+
+    .feature-icon {
+      width: 46px;
+      height: 46px;
+      display: grid;
+      place-items: center;
+      border-radius: 12px;
+      background: rgba(139,124,255,0.13);
+      font-size: 22px;
+      margin-bottom: 20px;
+    }
+
+    .feature-card h3 {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 18px;
+      margin-bottom: 11px;
+    }
+
+    .feature-card p {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    /* Tech stack */
+
+    .tech-section {
+      background: rgba(255,255,255,0.018);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .tech-list {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 13px;
+    }
+
+    .tech-item {
+      padding: 13px 20px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      border-radius: 9px;
+      color: #d7dff0;
+      font-size: 14px;
+      transition: 0.3s;
+    }
+
+    .tech-item:hover {
+      border-color: var(--secondary);
+      transform: translateY(-3px);
+    }
+
+    /* How to use */
+
+    .steps {
+      max-width: 780px;
+      margin: auto;
+    }
+
+    .step {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 25px;
+      padding: 23px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 13px;
+    }
+
+    .step-number {
+      min-width: 38px;
+      height: 38px;
+      display: grid;
+      place-items: center;
+      background: rgba(139,124,255,0.18);
+      color: #b9aeff;
+      border-radius: 10px;
+      font-weight: 700;
+    }
+
+    .step h3 {
+      margin-bottom: 9px;
+      font-size: 16px;
+    }
+
+    .step p {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    code {
+      color: #7ce4d5;
+      background: rgba(56,217,197,0.08);
+      padding: 3px 7px;
+      border-radius: 5px;
+      font-size: 13px;
+      overflow-wrap: anywhere;
+    }
+
+    /* Endpoints */
+
+    .endpoint-list {
+      max-width: 850px;
+      margin: auto;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      background: var(--surface);
+    }
+
+    .endpoint {
+      display: grid;
+      grid-template-columns: 75px 1fr auto;
+      align-items: center;
+      gap: 15px;
+      padding: 18px 22px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .endpoint:last-child {
+      border-bottom: none;
+    }
+
+    .method {
+      text-align: center;
+      padding: 6px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .get { background: rgba(56,217,197,0.12); color: #48dfc9; }
+    .post { background: rgba(139,124,255,0.15); color: #a99cff; }
+    .put { background: rgba(255,184,77,0.13); color: #ffc36e; }
+    .patch { background: rgba(75,165,255,0.13); color: #7cbaff; }
+    .delete { background: rgba(255,94,115,0.13); color: #ff8192; }
+
+    .endpoint code {
+      background: none;
+      color: #d9e1f1;
+      padding: 0;
+    }
+
+    .endpoint span {
+      color: var(--muted);
+      font-size: 12px;
+      text-align: right;
+    }
+
+    .endpoint-footer {
+      text-align: center;
+      margin-top: 25px;
+    }
+
+    /* CTA */
+
+    .cta {
+      text-align: center;
+      padding: 65px 25px;
+      border: 1px solid rgba(139,124,255,0.25);
+      border-radius: 20px;
+      background:
+        radial-gradient(
+          circle at top,
+          rgba(139,124,255,0.17),
+          transparent 65%
+        ),
+        var(--surface);
+    }
+
+    .cta h2 {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: clamp(27px, 4vw, 40px);
+      margin-bottom: 15px;
+    }
+
+    .cta p {
+      color: var(--muted);
+      margin-bottom: 27px;
+      line-height: 1.7;
+    }
+
+    /* Footer */
+
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 28px 0;
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 85px;
+    }
+
+    footer a {
+      color: var(--secondary);
+    }
+
+    /* Animations */
+
+    @keyframes pulse {
+      50% {
+        opacity: 0.4;
+        transform: scale(0.8);
+      }
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(25px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+      }
+
+      .reveal {
+        opacity: 1;
+        transform: none;
+      }
+    }
+
+    /* Responsive */
+
+    @media (max-width: 850px) {
+      .features-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .stats {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 600px) {
+      nav {
+        height: 70px;
+      }
+
+      .nav-links a:not(.nav-button) {
+        display: none;
+      }
+
+      .hero {
+        min-height: auto;
+        padding: 95px 0;
+      }
+
+      .hero h1 {
+        letter-spacing: -2px;
+      }
+
+      .hero p {
+        font-size: 15px;
+      }
+
+      section {
+        padding: 65px 0;
+      }
+
+      .features-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .endpoint {
+        grid-template-columns: 65px 1fr;
+        gap: 10px;
+        padding: 15px;
+      }
+
+      .endpoint span {
+        grid-column: 2;
+        text-align: left;
+      }
+
+      .step {
+        padding: 18px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="background-glow glow-one"></div>
+  <div class="background-glow glow-two"></div>
+
+  <!-- Navbar -->
+  <div class="container">
+    <nav>
+      <a href="#" class="logo">MERN<span>Blog</span> API</a>
+
+      <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#technology">Technology</a>
+        <a href="#endpoints">Endpoints</a>
+        <a href="/api-docs" class="nav-button">API Docs ↗</a>
+      </div>
+    </nav>
+  </div>
+
+  <!-- Hero -->
+  <header class="hero">
+    <div class="container hero-content reveal">
+      <div class="status">
+        <span class="status-dot"></span>
+        Backend API is running
+      </div>
+
+      <h1>
+        Powerful Blog Backend.
+        <span class="gradient-text">Built for Developers.</span>
+      </h1>
+
+      <p>
+        A feature-rich RESTful API built with Node.js, Express and MongoDB.
+        Manage users, publish blogs, interact through comments and likes,
+        upload images, and generate AI-powered blog summaries.
+      </p>
+
+      <div class="hero-buttons">
+        <a href="/api-docs" class="button button-primary">
+          Explore API Documentation ↗
+        </a>
+
+        <a href="#features" class="button button-secondary">
+          Explore Features ↓
+        </a>
+      </div>
+
+      <div class="hero-note">
+        REST API · JWT Authentication · Cloudinary · Gemini AI
+      </div>
+    </div>
+  </header>
+
+  <!-- Stats -->
+  <div class="container">
+    <div class="stats reveal">
+      <div class="stat-card">
+        <h3>REST</h3>
+        <p>API Architecture</p>
+      </div>
+
+      <div class="stat-card">
+        <h3>JWT</h3>
+        <p>Authentication</p>
+      </div>
+
+      <div class="stat-card">
+        <h3>AI</h3>
+        <p>Blog Summarization</p>
+      </div>
+
+      <div class="stat-card">
+        <h3>API</h3>
+        <p>Swagger Documentation</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Features -->
+  <section id="features">
+    <div class="container">
+      <div class="section-heading reveal">
+        <span>What you get</span>
+        <h2>Everything Your Blog Needs</h2>
+        <p>Powerful backend functionality in one API.</p>
+      </div>
+
+      <div class="features-grid">
+        <div class="feature-card reveal">
+          <div class="feature-icon">🔐</div>
+          <h3>Authentication & Authorization</h3>
+          <p>
+            Secure registration, login, logout, JWT authentication,
+            protected routes and role-based access control.
+          </p>
+        </div>
+
+        <div class="feature-card reveal">
+          <div class="feature-icon">👤</div>
+          <h3>User Management</h3>
+          <p>
+            Manage user profiles, update account information,
+            upload profile pictures and admin user operations.
+          </p>
+        </div>
+
+        <div class="feature-card reveal">
+          <div class="feature-icon">📝</div>
+          <h3>Blog Management</h3>
+          <p>
+            Create, read, update and delete blogs with categories,
+            tags, author information and cover images.
+          </p>
+        </div>
+
+        <div class="feature-card reveal">
+          <div class="feature-icon">❤️</div>
+          <h3>Likes & Comments</h3>
+          <p>
+            Like and unlike blogs, prevent duplicate likes,
+            create comments and manage comment interactions.
+          </p>
+        </div>
+
+        <div class="feature-card reveal">
+          <div class="feature-icon">🔎</div>
+          <h3>Search & Pagination</h3>
+          <p>
+            Search blogs, filter by category and tags,
+            sort results and retrieve paginated data.
+          </p>
+        </div>
+
+        <div class="feature-card reveal">
+          <div class="feature-icon">☁️</div>
+          <h3>Cloudinary Uploads</h3>
+          <p>
+            Upload and manage profile pictures and blog cover images,
+            including replacement and deletion of old images.
+          </p>
+        </div>
+
+        <div class="feature-card reveal">
+          <div class="feature-icon">✨</div>
+          <h3>AI Blog Summarization</h3>
+          <p>
+            Generate concise summaries of blog content using
+            Google's Gemini AI integration.
+          </p>
+        </div>
+
+        <div class="feature-card reveal">
+          <div class="feature-icon">📚</div>
+          <h3>Swagger Documentation</h3>
+          <p>
+            Explore API endpoints, inspect request schemas
+            and test documented endpoints through Swagger UI.
+          </p>
+        </div>
+
+        <div class="feature-card reveal">
+          <div class="feature-icon">🛡️</div>
+          <h3>Validation & Error Handling</h3>
+          <p>
+            Request validation for authentication, consistent
+            error responses and centralized error handling.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Technology -->
+  <section class="tech-section" id="technology">
+    <div class="container">
+      <div class="section-heading reveal">
+        <span>Technology stack</span>
+        <h2>Built With Modern Technologies</h2>
+        <p>Tools and services powering this backend.</p>
+      </div>
+
+      <div class="tech-list reveal">
+        <div class="tech-item">Node.js</div>
+        <div class="tech-item">Express.js</div>
+        <div class="tech-item">MongoDB</div>
+        <div class="tech-item">Mongoose</div>
+        <div class="tech-item">JWT</div>
+        <div class="tech-item">Bcrypt</div>
+        <div class="tech-item">Multer</div>
+        <div class="tech-item">Cloudinary</div>
+        <div class="tech-item">Gemini AI</div>
+        <div class="tech-item">Express Validator</div>
+        <div class="tech-item">Swagger</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How to use -->
+  <section id="getting-started">
+    <div class="container">
+      <div class="section-heading reveal">
+        <span>Getting started</span>
+        <h2>How to Use the API</h2>
+        <p>Follow these steps to run the backend locally.</p>
+      </div>
+
+      <div class="steps">
+        <div class="step reveal">
+          <div class="step-number">01</div>
+          <div>
+            <h3>Clone the Repository</h3>
+            <p>Download the backend source code from GitHub.</p>
+            <br>
+            <code>git clone YOUR_GITHUB_REPOSITORY_URL</code>
+          </div>
+        </div>
+
+        <div class="step reveal">
+          <div class="step-number">02</div>
+          <div>
+            <h3>Install Dependencies</h3>
+            <p>Navigate to the project directory and install packages.</p>
+            <br>
+            <code>npm install</code>
+          </div>
+        </div>
+
+        <div class="step reveal">
+          <div class="step-number">03</div>
+          <div>
+            <h3>Configure Environment Variables</h3>
+            <p>
+              Create a .env file and configure MongoDB, JWT,
+              Cloudinary and Gemini credentials.
+            </p>
+            <br>
+            <code>MONGO_URI=your_mongodb_connection_string</code>
+            <br><br>
+            <code>JWT_SECRET=your_jwt_secret</code>
+          </div>
+        </div>
+
+        <div class="step reveal">
+          <div class="step-number">04</div>
+          <div>
+            <h3>Start the Server</h3>
+            <p>Run the backend using your configured npm script.</p>
+            <br>
+            <code>npm run dev</code>
+          </div>
+        </div>
+
+        <div class="step reveal">
+          <div class="step-number">05</div>
+          <div>
+            <h3>Explore the API</h3>
+            <p>
+              Open Swagger documentation to explore endpoints,
+              provide authentication credentials and test requests.
+            </p>
+            <br>
+            <a href="/api-docs"><code>Open /api-docs ↗</code></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- API Endpoints -->
+  <section id="endpoints">
+    <div class="container">
+      <div class="section-heading reveal">
+        <span>API overview</span>
+        <h2>Example API Endpoints</h2>
+        <p>A quick look at the available API routes.</p>
+      </div>
+
+      <div class="endpoint-list reveal">
+        <div class="endpoint">
+          <div class="method post">POST</div>
+          <code>/api/auth/register</code>
+          <span>Register user</span>
+        </div>
+
+        <div class="endpoint">
+          <div class="method post">POST</div>
+          <code>/api/auth/login</code>
+          <span>Login user</span>
+        </div>
+
+        <div class="endpoint">
+          <div class="method get">GET</div>
+          <code>/api/user/me</code>
+          <span>Get profile</span>
+        </div>
+
+        <div class="endpoint">
+          <div class="method post">POST</div>
+          <code>/api/blog</code>
+          <span>Create blog</span>
+        </div>
+
+        <div class="endpoint">
+          <div class="method get">GET</div>
+          <code>/api/blog</code>
+          <span>Get all blogs</span>
+        </div>
+
+        <div class="endpoint">
+          <div class="method get">GET</div>
+          <code>/api/blog/:id</code>
+          <span>Get blog details</span>
+        </div>
+
+        <div class="endpoint">
+          <div class="method put">PUT</div>
+          <code>/api/blog/:id/like</code>
+          <span>Toggle blog like</span>
+        </div>
+
+        <div class="endpoint">
+          <div class="method post">POST</div>
+          <code>/api/blog/:id/comments</code>
+          <span>Create comment</span>
+        </div>
+
+        <div class="endpoint">
+          <div class="method post">POST</div>
+          <code>/api/blog/:id/summarize</code>
+          <span>AI summary</span>
+        </div>
+      </div>
+
+      <div class="endpoint-footer">
+        <a href="/api-docs" class="button button-secondary">
+          View All API Endpoints ↗
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section>
+    <div class="container">
+      <div class="cta reveal">
+        <h2>Ready to Explore the API?</h2>
+        <p>
+          Open the interactive Swagger documentation and start
+          exploring and testing the available endpoints.
+        </p>
+
+        <a href="/api-docs" class="button button-primary">
+          Launch Swagger Documentation ↗
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <p>
+        Built with ❤️ using the MERN Stack
+      </p>
+      <p style="margin-top: 9px;">
+        MERN Blog API · Backend Project
+      </p>
+      <p style="margin-top: 12px;">
+        <a href="/api-docs">API Documentation</a>
+      </p>
+    </div>
+  </footer>
+
+  <script>
+    // Reveal elements when they enter the viewport
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("visible");
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.12 }
+    );
+
+    document.querySelectorAll(".reveal").forEach((element) => {
+      observer.observe(element);
+    });
+  </script>
+</body>
+</html>

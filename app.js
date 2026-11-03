@@ -1,11 +1,12 @@
 const express = require("express");
+const path = require("path");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 
 const swaggerUi = require("swagger-ui-express");
 const swaggerSpec = require("./config/swagger");
 
-const errorMiddleware = require("./middlewares/errorMiddleware")
+const errorMiddleware = require("./middlewares/errorMiddleware");
 
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
@@ -18,30 +19,27 @@ app.use(express.json());
 app.use(cors());
 app.use(cookieParser());
 
-
-// Test Routes
+// Landing page
 app.get("/", (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: "Blog API is running",
-  });
+  res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// Routes
+// Swagger documentation
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+// API routes
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/blog", blogRoutes);
-
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Handle unknown routes
 app.use((req, res, next) => {
   const error = new Error(`Route not found: ${req.originalUrl}`);
   error.statusCode = 404;
-  next(error)
-})
+  next(error);
+});
 
-// Global error handler 
-app.use(errorMiddleware)
+// Global error handler
+app.use(errorMiddleware);
 
 module.exports = app;
