@@ -21,6 +21,7 @@ const {
 const { protect } = require("../middlewares/authMiddleware");
 const { restrictTo } = require("../middlewares/roleMiddleware");
 const upload = require("../middlewares/uploadMiddleware");
+const { summarizeBlog } = require("../controllers/aiController");
 
 const router = express.Router();
 
@@ -67,5 +68,9 @@ router.put("/comments/:id", protect, updateComment);
 
 // Delete Comment
 router.delete("/comments/:id", protect, deleteComment);
+
+// ------------------ AI feature ------------------
+router.post("/:id/summarize", protect, summarizeBlog);
+
 
 module.exports = router;
