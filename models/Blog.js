@@ -44,6 +44,7 @@ const blogSchema = new mongoose.Schema(
       required: true,
     },
 
+    // Cloudinary cover image
     coverImage: {
       type: String,
       default: null,
@@ -68,6 +69,7 @@ const blogSchema = new mongoose.Schema(
       min: 0,
     },
 
+    // Total number of comments
     commentsCount: {
       type: Number,
       default: 0,
