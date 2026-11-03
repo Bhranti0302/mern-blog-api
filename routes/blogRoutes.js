@@ -11,34 +11,61 @@ const {
   toggleBlogLike,
 } = require("../controllers/blogController");
 
-const { createComment,getAllComments,updateComment } = require("../controllers/commentController");
+const {
+  createComment,
+  getAllComments,
+  updateComment,
+  deleteComment,
+} = require("../controllers/commentController");
 
 const { protect } = require("../middlewares/authMiddleware");
 const { restrictTo } = require("../middlewares/roleMiddleware");
+const upload = require("../middlewares/uploadMiddleware");
 
 const router = express.Router();
 
-// ------------------ For logged in users only ------------------
+// ------------------ Logged In Users ------------------
 
+// Get My Blogs
 router.get("/my-blogs", protect, getMyBlogs);
-router.post("/", protect, createBlog);
-router.put("/:id", protect, updateBlog);
+
+// Create Blog
+router.post("/", protect, upload.single("coverImage"), createBlog);
+
+// Update Blog
+router.put("/:id", protect, upload.single("coverImage"), updateBlog);
+
+// Delete Blog
 router.delete("/:id", protect, deleteBlog);
+
+// Toggle Blog Like
 router.put("/:id/like", protect, toggleBlogLike);
 
-// -------------------- For All Users ---------------------
+// ------------------ All Users ------------------
 
+// Get All Blogs
 router.get("/", getAllBlogs);
+
+// Get Single Blog
 router.get("/:id", getBlogById);
 
-// -------------------- For Admin ---------------------
+// ------------------ Admin ------------------
 
+// Admin Delete Blog
 router.delete("/admin/:id", protect, restrictTo("admin"), deleteBlogByAdmin);
 
-// ------------------ Comments --------------------
+// ------------------ Comments ------------------
 
+// Create Comment
 router.post("/:id/comments", protect, createComment);
+
+// Get All Comments
 router.get("/:id/comments", getAllComments);
-router.put("/comments/:id",protect,updateComment)
+
+// Update Comment
+router.put("/comments/:id", protect, updateComment);
+
+// Delete Comment
+router.delete("/comments/:id", protect, deleteComment);
 
 module.exports = router;
