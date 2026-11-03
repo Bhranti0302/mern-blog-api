@@ -1,12 +1,29 @@
 const Comment = require("../models/Comment");
 const Blog = require("../models/Blog");
 const asyncHandler = require("../utils/asyncHandler");
-const mongoose = require("mongoose")
+const mongoose = require("mongoose");
 
-// Create comment
+// -------------------- Create Comment --------------------
+
 const createComment = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { content } = req.body;
+
+  // Validate Blog ID
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid blog ID",
+    });
+  }
+
+  // Validate comment content
+  if (typeof content !== "string" || !content.trim()) {
+    return res.status(400).json({
+      success: false,
+      message: "Comment content is required",
+    });
+  }
 
   // Check if blog exists
   const blog = await Blog.findById(id);
@@ -18,29 +35,43 @@ const createComment = asyncHandler(async (req, res) => {
     });
   }
 
-  // Validate comment content
-  if (!content || !content.trim()) {
-    return res.status(400).json({
-      success: false,
-      message: "Comment content is required",
-    });
-  }
-
   // Create comment
   const comment = await Comment.create({
     blog: id,
     user: req.user._id,
-    content,
+    content: content.trim(),
   });
 
-  // Increase comments count
-  await Blog.findByIdAndUpdate(id, {
-    $inc: { commentsCount: 1 },
-  });
+  try {
+    // Increase comments count
+    const updatedBlog = await Blog.findByIdAndUpdate(
+      id,
+      {
+        $inc: { commentsCount: 1 },
+      },
+      {
+        new: true,
+      },
+    );
+
+    if (!updatedBlog) {
+      await Comment.findByIdAndDelete(comment._id);
+
+      return res.status(404).json({
+        success: false,
+        message: "Blog is no longer available",
+      });
+    }
+  } catch (error) {
+    // Rollback comment if count update fails
+    await Comment.findByIdAndDelete(comment._id);
+    throw error;
+  }
 
   res.status(201).json({
     success: true,
     message: "Comment added successfully",
+    commentsCount: (blog.commentsCount || 0) + 1,
     comment: {
       id: comment._id,
       content: comment.content,
@@ -48,12 +79,22 @@ const createComment = asyncHandler(async (req, res) => {
   });
 });
 
-// ------------- Get All Comment as per blog id ------------
+// -------------------- Get All Comments --------------------
+
 const getAllComments = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
+  // Validate Blog ID
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid blog ID",
+    });
+  }
+
   // Pagination
   const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+
   const limit = Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || 10));
 
   const skip = (page - 1) * limit;
@@ -69,14 +110,18 @@ const getAllComments = asyncHandler(async (req, res) => {
   }
 
   // Fetch comments
-  const comments = await Comment.find({ blog: id })
+  const comments = await Comment.find({
+    blog: id,
+  })
     .populate("user", "name")
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(limit);
 
   // Count total comments
-  const totalComments = await Comment.countDocuments({ blog: id });
+  const totalComments = await Comment.countDocuments({
+    blog: id,
+  });
 
   const totalPages = Math.ceil(totalComments / limit);
 
@@ -85,6 +130,7 @@ const getAllComments = asyncHandler(async (req, res) => {
     message: "Comments fetched successfully",
     results: comments.length,
     totalComments,
+    commentsCount: blog.commentsCount,
     currentPage: page,
     totalPages,
     limit,
@@ -94,9 +140,8 @@ const getAllComments = asyncHandler(async (req, res) => {
   });
 });
 
-// -------------------- For both ------------------------
+// -------------------- Update Comment --------------------
 
-// Update comment 
 const updateComment = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { content } = req.body;
@@ -110,8 +155,12 @@ const updateComment = asyncHandler(async (req, res) => {
   }
 
   // Build filter
-  const filter = { _id: id };
+  const filter = {
+    _id: id,
+  };
 
+  // Regular users can update only their own comments
+  // Admins can update any comment
   if (req.user.role !== "admin") {
     filter.user = req.user._id;
   }
@@ -141,7 +190,9 @@ const updateComment = asyncHandler(async (req, res) => {
   // Update comment
   const comment = await Comment.findOneAndUpdate(
     filter,
-    { $set: updates },
+    {
+      $set: updates,
+    },
     {
       returnDocument: "after",
       runValidators: true,
@@ -165,7 +216,8 @@ const updateComment = asyncHandler(async (req, res) => {
   });
 });
 
-// Delete comment
+// -------------------- Delete Comment --------------------
+
 const deleteComment = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
@@ -178,7 +230,9 @@ const deleteComment = asyncHandler(async (req, res) => {
   }
 
   // Build filter
-  const filter = { _id: id };
+  const filter = {
+    _id: id,
+  };
 
   // Regular users can delete only their own comments
   // Admins can delete any comment
@@ -196,10 +250,16 @@ const deleteComment = asyncHandler(async (req, res) => {
     });
   }
 
-  // Decrease blog comments count
-  await Blog.findByIdAndUpdate(comment.blog, {
-    $inc: { commentsCount: -1 },
-  });
+  // Decrease comments count without allowing negative values
+  await Blog.findOneAndUpdate(
+    {
+      _id: comment.blog,
+      commentsCount: { $gt: 0 },
+    },
+    {
+      $inc: { commentsCount: -1 },
+    },
+  );
 
   res.status(200).json({
     success: true,
@@ -207,7 +267,11 @@ const deleteComment = asyncHandler(async (req, res) => {
   });
 });
 
+// -------------------- Exports --------------------
 
-
-module.exports = { createComment, getAllComments, updateComment };
-
+module.exports = {
+  createComment,
+  getAllComments,
+  updateComment,
+  deleteComment,
+};
