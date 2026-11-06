@@ -12,6 +12,10 @@ const options = {
 
     servers: [
       {
+        url: "https://mern-blog-api-r32p.onrender.com",
+        description: "Production server (Render)",
+      },
+      {
         url: "http://localhost:5000",
         description: "Local development server",
       },
